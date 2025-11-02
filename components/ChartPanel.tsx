@@ -6,7 +6,7 @@ interface ChartPanelProps {
   filteredData: FeatureCollection;
 }
 
-const COLORS = ['#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#84cc16', '#f59e0b'];
+const COLORS = ['#22d3ee', '#a3e635', '#8b5cf6', '#ec4899', '#f97316', '#84cc16', '#f59e0b'];
 
 const ChartPanel: React.FC<ChartPanelProps> = ({ filteredData }) => {
   const { stateData, locationData } = useMemo(() => {
@@ -35,21 +35,41 @@ const ChartPanel: React.FC<ChartPanelProps> = ({ filteredData }) => {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="p-2 bg-gray-700 border border-gray-600 rounded-md shadow-lg">
-          <p className="label text-gray-200">{`${label} : ${payload[0].value}`}</p>
+        <div className="p-2 glassmorphism rounded-md shadow-lg">
+          <p className="label text-gray-200">{`${label || payload[0].name} : ${payload[0].value}`}</p>
         </div>
       );
     }
     return null;
   };
+  
+  const RADIAN = Math.PI / 180;
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index, name }: any) => {
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+    if (percent < 0.05) return null; // Don't render label for small slices
+
+    return (
+      <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" className="text-xs font-semibold">
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
+  };
 
   return (
     <div className="space-y-8 animate-fade-in">
       <div>
-        <h4 className="text-lg font-semibold text-gray-100 mb-4 border-b border-gray-600 pb-2">Points per State</h4>
+        <h4 className="text-lg font-semibold text-gray-100 mb-4 border-b border-white/10 pb-2">Points per State</h4>
         <div style={{ width: '100%', height: 250 }}>
           <ResponsiveContainer>
             <BarChart data={stateData} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
+               <defs>
+                <linearGradient id="colorUv" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#a3e635" stopOpacity={0.8}/>
+                </linearGradient>
+              </defs>
               <XAxis type="number" hide />
               <YAxis 
                 type="category" 
@@ -60,13 +80,13 @@ const ChartPanel: React.FC<ChartPanelProps> = ({ filteredData }) => {
                 axisLine={false}
               />
               <Tooltip content={<CustomTooltip />} cursor={{fill: 'rgba(107, 114, 128, 0.2)'}} />
-              <Bar dataKey="count" fill="#22d3ee" radius={[0, 4, 4, 0]} barSize={15} />
+              <Bar dataKey="count" fill="url(#colorUv)" radius={[0, 4, 4, 0]} barSize={15} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
       <div>
-        <h4 className="text-lg font-semibold text-gray-100 mb-4 border-b border-gray-600 pb-2">Location Distribution</h4>
+        <h4 className="text-lg font-semibold text-gray-100 mb-4 border-b border-white/10 pb-2">Location Distribution</h4>
         <div style={{ width: '100%', height: 300 }}>
           <ResponsiveContainer>
             <PieChart>
@@ -75,15 +95,15 @@ const ChartPanel: React.FC<ChartPanelProps> = ({ filteredData }) => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                outerRadius={80}
+                label={renderCustomizedLabel}
+                outerRadius={100}
+                innerRadius={60}
                 fill="#8884d8"
                 dataKey="value"
                 nameKey="name"
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                tick={{ fill: '#d1d5db' }}
               >
                 {locationData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke={""} />
                 ))}
               </Pie>
               <Tooltip content={<CustomTooltip />} />

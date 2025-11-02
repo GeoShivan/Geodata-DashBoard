@@ -6,14 +6,13 @@ interface InfoPanelProps {
   allData: FeatureCollection;
 }
 
-// FIX: Replaced JSX.Element with React.ReactNode to resolve "Cannot find namespace 'JSX'" error.
 const SummaryCard: React.FC<{title: string; value: string | number; icon: React.ReactNode}> = ({ title, value, icon }) => (
-    <div className="bg-gray-900/50 p-4 rounded-xl shadow-lg border border-gray-700 flex items-center justify-between">
+    <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-4 rounded-xl shadow-lg border border-white/10 flex items-center justify-between transition-all duration-300 hover:shadow-cyan-500/20 hover:-translate-y-1">
         <div>
             <p className="text-sm font-medium text-gray-400">{title}</p>
-            <p className="text-3xl font-bold text-gray-100">{value}</p>
+            <p className="text-3xl font-bold text-gray-100 text-glow">{value}</p>
         </div>
-        <div className="bg-blue-900/50 text-blue-400 p-3 rounded-full">
+        <div className="bg-cyan-900/50 text-cyan-400 p-3 rounded-full">
             {icon}
         </div>
     </div>
@@ -41,7 +40,7 @@ const InfoPanel: React.FC<InfoPanelProps> = ({ feature, allData }) => {
     return Object.entries(properties)
       .filter(([_, value]) => value !== null && value !== undefined && value !== '')
       .map(([key, value]) => (
-        <div key={key} className="py-3 sm:grid sm:grid-cols-3 sm:gap-4 border-b border-gray-700">
+        <div key={key} className="py-3 sm:grid sm:grid-cols-3 sm:gap-4 border-b border-white/10 last:border-b-0">
           <dt className="text-sm font-medium text-gray-400 capitalize">{key.replace(/_/g, ' ')}</dt>
           <dd className="mt-1 text-sm text-gray-100 font-semibold sm:mt-0 sm:col-span-2 break-words">{String(value)}</dd>
         </div>
@@ -54,21 +53,22 @@ const InfoPanel: React.FC<InfoPanelProps> = ({ feature, allData }) => {
     <div className="h-full">
       {feature ? (
         <div className="animate-fade-in">
-          <div className="bg-blue-600/80 text-white p-4 rounded-lg mb-4 shadow-lg">
+          <div className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white p-4 rounded-lg mb-4 shadow-lg">
             <h3 className="text-lg font-bold">Point Details</h3>
-            <p className="text-blue-200 text-md truncate">{vesId}</p>
+            <p className="text-gray-200 text-md truncate">{vesId}</p>
           </div>
-          <dl>
+          <dl className="bg-gray-900/50 rounded-lg border border-white/10 px-4">
             {renderProperties(feature.properties)}
           </dl>
         </div>
       ) : (
         <div className="animate-fade-in">
-          <h3 className="text-xl font-bold text-gray-100 border-b border-gray-600 pb-2 mb-4">Dashboard Summary</h3>
+          <h3 className="text-xl font-bold text-gray-100 border-b border-white/10 pb-2 mb-4">Dashboard Summary</h3>
           <div className="space-y-4">
-            <SummaryCard title="Total Survey Points" value={summary.totalPoints} icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>} />
-            <SummaryCard title="Unique States" value={summary.uniqueStates} icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2h10a2 2 0 002-2v-1a2 2 0 012-2h1.945M7.884 5.036A9 9 0 0112 3c3.859 0 7.215 2.502 8.116 6.036m-14.456 0a48.108 48.108 0 00-2.478 5.405A48.11 48.11 0 0012 21c3.223 0 6.22-1.04 8.64-2.846" /></svg>} />
-            <SummaryCard title="Unique Locations" value={summary.uniqueLocations} icon={<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>} />
+            {/* FIX: Replaced non-standard `i-feather-*` icon tags with standard inline SVG elements to resolve JSX compilation errors. */}
+            <SummaryCard title="Total Survey Points" value={summary.totalPoints} icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>} />
+            <SummaryCard title="Unique States" value={summary.uniqueStates} icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>} />
+            <SummaryCard title="Unique Locations" value={summary.uniqueLocations} icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6"><polygon points="3 11 22 2 13 21 11 13 3 11" /></svg>} />
 
             <p className="text-center text-gray-500 pt-8">Select a point on the map to see details or use the filters to explore the data.</p>
           </div>

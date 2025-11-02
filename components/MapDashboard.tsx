@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { MapContainer, TileLayer, GeoJSON, LayersControl } from 'react-leaflet';
 import L, { LatLngExpression, Layer, LeafletMouseEvent } from 'leaflet';
@@ -20,44 +21,95 @@ interface MapDashboardProps {
 const getFeatureId = (feature: Feature | null): string => {
   if (!feature) return 'none';
   const vesId = feature.properties.VESID || feature.properties['VES ID'];
-  // Create a composite key for better uniqueness, handling potential nulls
   const coords = feature.geometry.coordinates || [];
   return `${vesId}-${coords.join(',')}`;
 };
+
+const COLOR_PALETTE = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
+
 
 const MapDashboard: React.FC<MapDashboardProps> = ({ data, selectedFeature, onFeatureSelect }) => {
   const mapCenter: LatLngExpression = data.features.length > 0
     ? [data.features[0].geometry.coordinates[1], data.features[0].geometry.coordinates[0]]
     : [20.5937, 78.9629];
   
-  const groupedByState = React.useMemo(() => {
+  const { groupedByState, stateColorMap } = React.useMemo(() => {
     const groups: { [key: string]: Feature[] } = {};
+    // FIX: Explicitly convert state property to string to avoid type errors when using it as an index key.
+    const uniqueStates = [...new Set(data.features.map(f => (String(f.properties.State || '').trim()) || 'Unknown State'))].sort();
+    
+    const colorMap: { [key: string]: string } = {};
+    uniqueStates.forEach((state, index) => {
+        colorMap[state] = COLOR_PALETTE[index % COLOR_PALETTE.length];
+    });
+
     for (const feature of data.features) {
-      const state = feature.properties.State?.trim().replace(/\s+/g, ' ') || 'Unknown State';
+      // FIX: Explicitly convert state property to string to resolve the "Type 'unknown' cannot be used as an index type" error.
+      const state = (String(feature.properties.State || '').trim()) || 'Unknown State';
       if (!groups[state]) {
         groups[state] = [];
       }
       groups[state].push(feature);
     }
-    return groups;
+    return { groupedByState: groups, stateColorMap: colorMap };
   }, [data]);
   
   const pointToLayer = (feature: Feature, latlng: L.LatLng): L.Layer => {
     const isSelected = selectedFeature && getFeatureId(feature) === getFeatureId(selectedFeature);
+    // FIX: Explicitly convert state property to string for type safety and consistency.
+    const state = (String(feature.properties.State || '').trim()) || 'Unknown State';
+    const stateColor = stateColorMap[state] || '#cccccc';
+
     return L.circleMarker(latlng, {
       radius: isSelected ? 10 : 6,
-      fillColor: isSelected ? '#ef4444' : '#22d3ee', // red-500, cyan-400
-      color: '#000',
-      weight: isSelected ? 2 : 1,
+      fillColor: isSelected ? '#a3e635' : stateColor, // lime-400 for selected
+      color: isSelected ? '#a3e635' : '#111827',
+      weight: isSelected ? 3 : 1,
       opacity: 1,
       fillOpacity: isSelected ? 1 : 0.8,
     });
   };
 
   const onEachFeature = (feature: Feature, layer: Layer) => {
-    const vesId = feature.properties.VESID || feature.properties['VES ID'] || 'N/A';
-    const location = feature.properties.Location || 'Unknown Location';
-    layer.bindTooltip(`<b>VES ID:</b> ${vesId}<br/><b>Location:</b> ${location}`);
+    const { properties, geometry } = feature;
+    const vesId = properties.VESID || properties['VES ID'] || 'N/A';
+    const location = properties.Location || 'N/A';
+    const area = properties.Area || 'N/A';
+    // FIX: Explicitly convert state property to string for type safety and consistency.
+    const state = (String(properties.State || '').trim()) || 'N/A';
+    const [lon, lat] = geometry.coordinates;
+
+    const tooltipContent = `<div class="font-sans"><b>ID:</b> ${vesId}<br/><b>Location:</b> ${location}</div>`;
+    layer.bindTooltip(tooltipContent);
+
+    const popupContent = `
+      <div class="w-56 p-0 font-sans text-gray-200">
+        <div class="bg-gradient-to-r from-cyan-500 to-blue-500 rounded-t-lg p-2">
+          <h3 class="font-bold text-md text-white">
+            Point ${vesId}
+          </h3>
+        </div>
+        <dl class="text-xs p-2">
+          <div class="flex justify-between py-1.5">
+            <dt class="font-medium text-gray-400">Location:</dt>
+            <dd class="font-semibold truncate">${location}</dd>
+          </div>
+          <div class="flex justify-between py-1.5">
+            <dt class="font-medium text-gray-400">Area:</dt>
+            <dd class="font-semibold truncate">${area}</dd>
+          </div>
+          <div class="flex justify-between py-1.5">
+            <dt class="font-medium text-gray-400">State:</dt>
+            <dd class="font-semibold truncate">${state}</dd>
+          </div>
+          <div class="flex justify-between py-1.5 mt-1 border-t border-white/10">
+            <dt class="font-medium text-gray-400">Coords:</dt>
+            <dd class="font-mono text-lime-400">${lat.toFixed(4)}, ${lon.toFixed(4)}</dd>
+          </div>
+        </dl>
+      </div>
+    `;
+    layer.bindPopup(popupContent, { minWidth: 220 });
     
     layer.on({
       click: (e: LeafletMouseEvent) => {
@@ -76,7 +128,7 @@ const MapDashboard: React.FC<MapDashboardProps> = ({ data, selectedFeature, onFe
   };
 
   return (
-    <div className="w-full h-full" style={{ minHeight: '300px' }}>
+    <div className="w-full h-full relative" style={{ minHeight: '300px' }}>
       <MapContainer center={mapCenter} zoom={5} scrollWheelZoom={true} style={{ height: '100%', width: '100%', backgroundColor: '#111827' }}>
         <LayersControl position="topright">
           <LayersControl.BaseLayer name="OpenStreetMap">
@@ -101,7 +153,7 @@ const MapDashboard: React.FC<MapDashboardProps> = ({ data, selectedFeature, onFe
           {Object.entries(groupedByState).map(([state, features]) => (
             <LayersControl.Overlay key={state} name={state} checked>
               <GeoJSON
-                key={`${state}-${getFeatureId(selectedFeature)}`} // Re-render when selection changes to update style
+                key={`${state}-${getFeatureId(selectedFeature)}`} 
                 data={{ type: 'FeatureCollection', features } as FeatureCollection}
                 pointToLayer={pointToLayer}
                 onEachFeature={onEachFeature}

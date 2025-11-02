@@ -1,5 +1,5 @@
 {
-  "name": "Geo Survey Data Dashboard",
+  "name": "EGSS Geo Survey Data Dashboard",
   "description": "An interactive web map dashboard that visualizes GeoJSON survey data points. Users can explore points on the map and view detailed information for each surveyed location.",
   "requestFramePermissions": []
 }

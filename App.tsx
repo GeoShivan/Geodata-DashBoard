@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+
+import React, { useState, useMemo, useCallback } from 'react';
 import Header from './components/Header';
 import MapDashboard from './components/MapDashboard';
 import FilterPanel from './components/FilterPanel';
@@ -39,23 +40,29 @@ function App() {
 
   // Reset selected feature if it's no longer in the filtered data
   React.useEffect(() => {
-    if (selectedFeature && !filteredData.features.some(f => f.id === selectedFeature.id)) {
+    if (selectedFeature && !filteredData.features.some(f => (f.properties.VESID || f.properties['VES ID']) === (selectedFeature.properties.VESID || selectedFeature.properties['VES ID']))) {
       setSelectedFeature(null);
     }
   }, [filteredData, selectedFeature]);
 
+  const clearFilters = useCallback(() => {
+    setStateFilter('all');
+    setLocationFilter('all');
+  }, []);
+
 
   return (
-    <div className="flex flex-col h-screen bg-gray-900 font-sans text-gray-200">
+    <div className="flex flex-col h-screen aurora-bg font-sans text-gray-200">
       <Header />
-      <div className="flex flex-1 overflow-hidden">
-        <aside className="w-full md:w-1/3 lg:w-1/4 h-full bg-gray-800 shadow-2xl flex flex-col p-4 border-r border-gray-700">
+      <div className="flex flex-1 overflow-hidden p-4 gap-4">
+        <aside className="w-full md:w-1/3 lg:w-1/4 h-full glassmorphism rounded-2xl shadow-2xl flex flex-col p-4">
           <FilterPanel 
             allData={cleanedData}
             stateFilter={stateFilter}
             setStateFilter={setStateFilter}
             locationFilter={locationFilter}
             setLocationFilter={setLocationFilter}
+            onClearFilters={clearFilters}
           />
           <div className="flex-1 overflow-y-auto mt-4 pr-1">
             <Sidebar 
@@ -66,7 +73,7 @@ function App() {
           </div>
         </aside>
 
-        <main className="flex-1 h-full w-full">
+        <main className="flex-1 h-full w-full rounded-2xl overflow-hidden shadow-2xl">
           <MapDashboard 
             data={filteredData} 
             selectedFeature={selectedFeature}
