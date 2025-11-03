@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Feature, FeatureCollection } from '../types';
+import MiniMap from './MapLegend';
 
 interface InfoPanelProps {
   feature: Feature | null;
@@ -57,6 +58,7 @@ const InfoPanel: React.FC<InfoPanelProps> = ({ feature, allData }) => {
             <h3 className="text-lg font-bold">Point Details</h3>
             <p className="text-gray-200 text-md truncate">{vesId}</p>
           </div>
+          <MiniMap feature={feature} />
           <dl className="bg-gray-900/50 rounded-lg border border-white/10 px-4">
             {renderProperties(feature.properties)}
           </dl>

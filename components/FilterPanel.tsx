@@ -20,15 +20,20 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   onClearFilters
 }) => {
   const [isOpen, setIsOpen] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const { uniqueStates, locationsInState } = useMemo(() => {
-    const states = new Set<string>();
+    const allStates = new Set<string>();
+    allData.features.forEach(f => {
+      if (f.properties.State) allStates.add(f.properties.State.trim());
+    });
+
+    const searchedStates = Array.from(allStates)
+      .filter(s => s.toLowerCase().includes(searchTerm.toLowerCase()))
+      .sort();
+
     const locations = new Set<string>();
     let dataToScan = allData.features;
-
-    allData.features.forEach(f => {
-      if (f.properties.State) states.add(f.properties.State.trim());
-    });
 
     if (stateFilter !== 'all') {
       dataToScan = allData.features.filter(f => f.properties.State?.trim() === stateFilter);
@@ -38,15 +43,24 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
       if (f.properties.Location) locations.add(f.properties.Location.trim());
     });
 
+    const searchedLocations = Array.from(locations)
+      .filter(l => l.toLowerCase().includes(searchTerm.toLowerCase()))
+      .sort();
+
     return { 
-      uniqueStates: Array.from(states).sort(),
-      locationsInState: Array.from(locations).sort()
+      uniqueStates: searchedStates,
+      locationsInState: searchedLocations
     };
-  }, [allData, stateFilter]);
+  }, [allData, stateFilter, searchTerm]);
 
   const handleStateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setStateFilter(e.target.value);
     setLocationFilter('all'); // Reset location when state changes
+  };
+  
+  const handleClear = () => {
+    setSearchTerm('');
+    onClearFilters();
   };
 
   const selectStyle = "w-full bg-gray-900/50 border border-white/10 text-white text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block p-2.5 placeholder-gray-400 custom-select";
@@ -66,7 +80,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
             </svg>
           </button>
           <button
-              onClick={onClearFilters}
+              onClick={handleClear}
               className="ml-2 text-xs text-gray-400 hover:text-cyan-400 transition-colors duration-200 p-1.5 rounded-md hover:bg-white/10 flex items-center space-x-1"
               title="Clear filters"
             >
@@ -82,6 +96,24 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         className={`transition-all duration-500 ease-in-out overflow-hidden ${isOpen ? 'max-h-96 opacity-100 pt-4' : 'max-h-0 opacity-0'}`}
       >
         <div className="space-y-4">
+            <div>
+              <label htmlFor="search-filter" className="block mb-2 text-sm font-medium text-gray-300 px-1">Search</label>
+              <div className="relative">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                      <svg className="w-4 h-4 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20">
+                          <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"/>
+                      </svg>
+                  </div>
+                  <input
+                      type="text"
+                      id="search-filter"
+                      value={searchTerm}
+                      onChange={e => setSearchTerm(e.target.value)}
+                      placeholder="Search states or locations..."
+                      className="w-full bg-gray-900/50 border border-white/10 text-white text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block p-2.5 pl-10 placeholder-gray-400"
+                  />
+              </div>
+            </div>
             <div>
                 <label htmlFor="state-filter" className="block mb-2 text-sm font-medium text-gray-300 px-1">State</label>
                 <div className="custom-select-wrapper">

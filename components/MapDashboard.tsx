@@ -1,8 +1,9 @@
 
-import React from 'react';
-import { MapContainer, TileLayer, GeoJSON, LayersControl } from 'react-leaflet';
+import React, { useEffect } from 'react';
+import { MapContainer, TileLayer, GeoJSON, LayersControl, useMap } from 'react-leaflet';
 import L, { LatLngExpression, Layer, LeafletMouseEvent } from 'leaflet';
 import { Feature, FeatureCollection } from '../types';
+import { getFeatureId } from '../utils';
 
 // Fix for default icon issue with webpack
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -18,14 +19,22 @@ interface MapDashboardProps {
   onFeatureSelect: (feature: Feature) => void;
 }
 
-const getFeatureId = (feature: Feature | null): string => {
-  if (!feature) return 'none';
-  const vesId = feature.properties.VESID || feature.properties['VES ID'];
-  const coords = feature.geometry.coordinates || [];
-  return `${vesId}-${coords.join(',')}`;
-};
-
 const COLOR_PALETTE = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
+
+const MapEffect: React.FC<{ selectedFeature: Feature | null }> = ({ selectedFeature }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (selectedFeature && selectedFeature.geometry.type === 'Point') {
+      const [lon, lat] = selectedFeature.geometry.coordinates;
+      map.flyTo([lat, lon], 16, {
+        animate: true,
+        duration: 1,
+      });
+    }
+  }, [selectedFeature, map]);
+
+  return null;
+};
 
 
 const MapDashboard: React.FC<MapDashboardProps> = ({ data, selectedFeature, onFeatureSelect }) => {
@@ -112,17 +121,8 @@ const MapDashboard: React.FC<MapDashboardProps> = ({ data, selectedFeature, onFe
     layer.bindPopup(popupContent, { minWidth: 220 });
     
     layer.on({
-      click: (e: LeafletMouseEvent) => {
+      click: () => {
         onFeatureSelect(feature);
-        
-        const map = e.target._map;
-        if (map && feature.geometry.type === 'Point') {
-          const [lon, lat] = feature.geometry.coordinates;
-          map.flyTo([lat, lon], 14, {
-            animate: true,
-            duration: 1,
-          });
-        }
       },
     });
   };
@@ -161,6 +161,7 @@ const MapDashboard: React.FC<MapDashboardProps> = ({ data, selectedFeature, onFe
             </LayersControl.Overlay>
           ))}
         </LayersControl>
+        <MapEffect selectedFeature={selectedFeature} />
       </MapContainer>
     </div>
   );

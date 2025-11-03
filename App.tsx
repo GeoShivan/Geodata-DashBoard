@@ -7,10 +7,13 @@ import Sidebar from './components/Sidebar';
 import { surveyData } from './data/surveyData';
 import { Feature, FeatureCollection } from './types';
 
+export type SidebarTab = 'details' | 'list' | 'charts';
+
 function App() {
   const [selectedFeature, setSelectedFeature] = useState<Feature | null>(null);
   const [stateFilter, setStateFilter] = useState<string>('all');
   const [locationFilter, setLocationFilter] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState<SidebarTab>('details');
 
   const cleanedData: FeatureCollection = useMemo(() => {
     const validFeatures = surveyData.features.filter(feature => 
@@ -44,6 +47,11 @@ function App() {
       setSelectedFeature(null);
     }
   }, [filteredData, selectedFeature]);
+  
+  const handleFeatureSelect = useCallback((feature: Feature) => {
+    setSelectedFeature(feature);
+    setActiveTab('list');
+  }, []);
 
   const clearFilters = useCallback(() => {
     setStateFilter('all');
@@ -68,7 +76,10 @@ function App() {
             <Sidebar 
               selectedFeature={selectedFeature} 
               allData={cleanedData}
-              filteredData={filteredData} 
+              filteredData={filteredData}
+              onFeatureSelect={handleFeatureSelect}
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
             />
           </div>
         </aside>
@@ -77,7 +88,7 @@ function App() {
           <MapDashboard 
             data={filteredData} 
             selectedFeature={selectedFeature}
-            onFeatureSelect={setSelectedFeature} 
+            onFeatureSelect={handleFeatureSelect} 
           />
         </main>
       </div>
